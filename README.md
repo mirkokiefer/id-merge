@@ -1,6 +1,8 @@
 #id-merge
-3-way merging of arrays with identifyable objects.  
+3-way merging of arrays with identifyable objects.
+
 You just pass in the diffs to the original array using [id-diff's format](https://github.com/mirkok/id-diff).  
+
 If you just need merging of plain arrays you can use [array-merge](https://github.com/mirkok/array-merge).
 
 ``` js
