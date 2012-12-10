@@ -1,0 +1,16 @@
+{
+  "name": "id-merge",
+  "version": "0.0.1",
+  "description": "merge arrays with identifyable elements",
+  "main": "merge.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": "",
+  "author": "Mirko Kiefer <mail@mirkokiefer.com>",
+  "license": "BSD",
+  "dependencies": {
+    "array-merge": "0.0.1",
+    "underscore": "~1.4.3"
+  }
+}
