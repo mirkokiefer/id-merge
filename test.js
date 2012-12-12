@@ -59,7 +59,7 @@ var mergeExpected = {
 
 describe('id-merge', function() {
   it('should merge based on the diffs', function() {
-    var merged = merge(diff1Expected, diff2Expected)
+    var merged = merge([diff1Expected, diff2Expected])
     assert.deepEqual(merged, mergeExpected)
   })
 })

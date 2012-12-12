@@ -1,6 +1,8 @@
 
 var arrayMerge = require('array-merge')
 var _ = require('underscore')
+var Stream = require('token-streams').TokenStream
+var StreamCollection = require('token-streams').TokenStreamCollection
 
 var ignoreAllDeletes = function(diff) {
   return diff.map(function(each) {
@@ -8,38 +10,49 @@ var ignoreAllDeletes = function(diff) {
   })
 }
 
-var merge = function(diff1, diff2) {
-  var diff1IDs = ignoreAllDeletes(diff1.ids)
-  var diff2IDs = ignoreAllDeletes(diff2.ids)
-  var mergedIDs = arrayMerge([diff1IDs, diff2IDs])
+var merge = function(diffs) {
+  var diffIDs = diffs.map(function(each) { return ignoreAllDeletes(each.ids) })
+  var mergedIDs = arrayMerge(diffIDs)
+
+  var valueDiffStreams = diffs.map(function(each) {
+    var tokens = _.map(each.values, function(entry, id) {
+      return {type: entry[0], value: {id: id, value: [entry[1], entry[2]]}}
+    }).sort(function(a, b) { return a.value.id > b.value.id })
+    return new Stream(tokens)
+  })
+  var valueDiffStreamCol = new StreamCollection(valueDiffStreams)
+
   var mergedValues = {}
   var valueConflicts = []
-  _.each(diff1.values, function(diff1Entry, id) {
-    var diff2Entry = diff2.values[id] || ['0']
-    var modifier = diff1Entry[0] + diff2Entry[0]
-    if(modifier == '==') return mergedValues[id] = diff1Entry[1]
-    if(modifier == '=m') return mergedValues[id] = diff2Entry[2]
-    if(modifier == 'm=') return mergedValues[id] = diff1Entry[2]
-    if(modifier == 'mm') {
-      valueConflicts.push(id)
-      return mergedValues[id] = [diff1Entry[2], diff2Entry[2]]
-    }
-    if(modifier == '+0') return mergedValues[id] = diff1Entry[1]
-    if(modifier == '-=') return
-    if(modifier == '--') return
-    if(modifier == '-m') {
-      valueConflicts.push(id)
-      return mergedValues[id] = [null, diff2Entry[2]]
-    }
-    if(modifier == 'm-') {
-      valueConflicts.push(id)
-      return mergedValues[id] = [diff1Entry[2], null]
-    }
+
+  valueDiffStreamCol.onAll('=', function() {
+    var id = valueDiffStreams[0].token.value.id
+    mergedValues[id] = valueDiffStreams[0].token.value.value[0]
+    valueDiffStreamCol.next()
   })
-    
-  _.each(diff2.values, function(diff2Entry, id) {
-    if(diff2Entry[0] == '+') mergedValues[id] = diff2Entry[1]
+
+  valueDiffStreamCol.onSome(['m', '-'], function(modifyingStreamCol) {
+    var id = modifyingStreamCol.streams[0].token.value.id
+    var newValues = _.uniq(modifyingStreamCol.streams.map(function(each) {
+      return each.token.type == 'm' ? each.token.value.value[1] : null
+    }))
+    if(newValues.length > 1) {
+      valueConflicts.push(id)
+      mergedValues[id] = newValues
+    } else if(newValues[0] !== null) {
+      mergedValues[id] = newValues[0]
+    }
+    valueDiffStreamCol.next()
   })
+
+  valueDiffStreamCol.onSome(['+'], function(addingStreamCol) {
+    var id = addingStreamCol.streams[0].token.value.id
+    mergedValues[id] = addingStreamCol.streams[0].token.value.value[0]
+    valueDiffStreamCol.next()
+  })
+
+  valueDiffStreamCol.emit()
+
   return {
     valueConflicts: valueConflicts, values: mergedValues,
     orderConflicts: mergedIDs.conflict, order: mergedIDs.result
