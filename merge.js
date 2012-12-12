@@ -10,15 +10,7 @@ var ignoreAllDeletes = function(diff) {
   })
 }
 
-var parseValueDiffs = function(diffs) {
-  var valueDiffStreams = diffs.map(function(each) {
-    var tokens = _.map(each.values, function(entry, id) {
-      return {type: entry[0], value: {id: id, value: [entry[1], entry[2]]}}
-    }).sort(function(a, b) { return a.value.id > b.value.id })
-    return new Stream(tokens)
-  })
-  var valueDiffStreamCol = new StreamCollection(valueDiffStreams)
-
+var parseValueDiffs = function(valueDiffStreamCol) {
   var mergedValues = {}
   var valueConflicts = []
 
@@ -52,11 +44,21 @@ var parseValueDiffs = function(diffs) {
   return {result: mergedValues, conflicts: valueConflicts}
 }
 
+var valueDiffStreamCollection = function(diffs) {
+  var valueDiffStreams = diffs.map(function(each) {
+    var tokens = _.map(each.values, function(entry, id) {
+      return {type: entry[0], value: {id: id, value: [entry[1], entry[2]]}}
+    }).sort(function(a, b) { return a.value.id > b.value.id })
+    return new Stream(tokens)
+  })
+  return new StreamCollection(valueDiffStreams)
+}
+
 var merge = function(diffs) {
   var diffIDs = diffs.map(function(each) { return ignoreAllDeletes(each.ids) })
   var mergedIDs = arrayMerge(diffIDs)
   
-  var mergedValues = parseValueDiffs(diffs)
+  var mergedValues = parseValueDiffs(valueDiffStreamCollection(diffs))
   var filterOrders = function(orders) {
     return orders.map(function(order) {
       return order.filter(function(id) { return mergedValues.result[id] !== undefined })
