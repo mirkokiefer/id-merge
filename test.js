@@ -24,8 +24,6 @@ var modified2 = [
   {id: 4, value: 5}
 ]
 
-console.log(diff(origin, modified1))
-
 var diff1 = diff(origin, modified1)
 var diff2 = diff(origin, modified2)
 

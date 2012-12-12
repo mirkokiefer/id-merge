@@ -10,10 +10,7 @@ var ignoreAllDeletes = function(diff) {
   })
 }
 
-var merge = function(diffs) {
-  var diffIDs = diffs.map(function(each) { return ignoreAllDeletes(each.ids) })
-  var mergedIDs = arrayMerge(diffIDs)
-
+var parseValueDiffs = function(diffs) {
   var valueDiffStreams = diffs.map(function(each) {
     var tokens = _.map(each.values, function(entry, id) {
       return {type: entry[0], value: {id: id, value: [entry[1], entry[2]]}}
@@ -26,8 +23,8 @@ var merge = function(diffs) {
   var valueConflicts = []
 
   valueDiffStreamCol.onAll('=', function() {
-    var id = valueDiffStreams[0].token.value.id
-    mergedValues[id] = valueDiffStreams[0].token.value.value[0]
+    var id = valueDiffStreamCol.streams[0].token.value.id
+    mergedValues[id] = valueDiffStreamCol.streams[0].token.value.value[0]
     valueDiffStreamCol.next()
   })
 
@@ -52,16 +49,23 @@ var merge = function(diffs) {
   })
 
   valueDiffStreamCol.emit()
+  return {result: mergedValues, conflicts: valueConflicts}
+}
 
+var merge = function(diffs) {
+  var diffIDs = diffs.map(function(each) { return ignoreAllDeletes(each.ids) })
+  var mergedIDs = arrayMerge(diffIDs)
+  
+  var mergedValues = parseValueDiffs(diffs)
   var filterOrders = function(orders) {
     return orders.map(function(order) {
-      return order.filter(function(id) { return mergedValues[id] !== undefined })
+      return order.filter(function(id) { return mergedValues.result[id] !== undefined })
     })
   }
   mergedIDs.result = mergedIDs.conflict ? filterOrders(mergedIDs.result) : filterOrders([mergedIDs.result])[0]
   
   return {
-    valueConflicts: valueConflicts, values: mergedValues,
+    valueConflicts: mergedValues.conflicts, values: mergedValues.result,
     orderConflicts: mergedIDs.conflict, order: mergedIDs.result
   }
 }
