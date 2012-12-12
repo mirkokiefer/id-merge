@@ -1,6 +1,6 @@
 {
   "name": "id-merge",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "merge arrays with identifyable elements",
   "main": "merge.js",
   "scripts": {
