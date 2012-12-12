@@ -13,5 +13,8 @@
     "array-merge": "0.0.3",
     "underscore": "~1.4.3",
     "token-streams": "0.0.1"
+  },
+  "devDependencies": {
+    "id-diff": "0.0.1"
   }
 }

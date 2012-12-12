@@ -53,6 +53,13 @@ var merge = function(diffs) {
 
   valueDiffStreamCol.emit()
 
+  var filterOrders = function(orders) {
+    return orders.map(function(order) {
+      return order.filter(function(id) { return mergedValues[id] !== undefined })
+    })
+  }
+  mergedIDs.result = mergedIDs.conflict ? filterOrders(mergedIDs.result) : filterOrders([mergedIDs.result])[0]
+  
   return {
     valueConflicts: valueConflicts, values: mergedValues,
     orderConflicts: mergedIDs.conflict, order: mergedIDs.result

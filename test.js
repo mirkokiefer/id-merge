@@ -1,18 +1,21 @@
 
 var assert = require('assert')
 var merge = require('./merge')
+var diff = require('id-diff')
 
 var origin = [
   {id: 1, value: 1},
   {id: 2, value: 2},
   {id: 3, value: 3},
-  {id: 4, value: 4}
+  {id: 4, value: 4},
+  {id: 5, value: 5}
 ]
 var modified1 = [
-  {id: 5, value: 6},
+  {id: 6, value: 6},
   {id: 3, value: 8},
   {id: 2, value: 2},
   {id: 4, value: 4},
+  {id: 5, value: 5},
   {id: 1, value: 5}
 ]
 var modified2 = [
@@ -21,25 +24,10 @@ var modified2 = [
   {id: 4, value: 5}
 ]
 
-var diff1Expected = {
-  values: {
-    1: ['m', 1, 5],
-    2: ['=', 2],
-    3: ['m', 3, 8],
-    4: ['=', 4],
-    5: ['+', 6]
-  },
-  ids: [["x",1],["x",2],["+",5],["=",3],["p",2],["=",4],["p",1]]
-}
-var diff2Expected = {
-  values: {
-    1: ['m', 1, 9],
-    2: ['=', 2],
-    3: ['-', 3],
-    4: ['m', 4, 5]
-  },
-  ids: [["x",1],["=",2],["-",3],["p",1],["=",4]]
-}
+console.log(diff(origin, modified1))
+
+var diff1 = diff(origin, modified1)
+var diff2 = diff(origin, modified2)
 
 var mergeExpected = {
   valueConflicts: [1, 3],
@@ -48,18 +36,18 @@ var mergeExpected = {
     2: 2,
     3: [8, null],
     4: 5,
-    5: 6
+    6: 6
   },
   orderConflicts: true,
   order: [
-    [5, 3, 2, 4, 1],
-    [5, 3, 1, 2, 4]
+    [6, 3, 2, 4, 1],
+    [6, 3, 1, 2, 4]
   ]
 }
 
 describe('id-merge', function() {
   it('should merge based on the diffs', function() {
-    var merged = merge([diff1Expected, diff2Expected])
+    var merged = merge([diff1, diff2])
     assert.deepEqual(merged, mergeExpected)
   })
 })
