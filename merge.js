@@ -11,7 +11,7 @@ var ignoreAllDeletes = function(diff) {
 var merge = function(diff1, diff2) {
   var diff1IDs = ignoreAllDeletes(diff1.ids)
   var diff2IDs = ignoreAllDeletes(diff2.ids)
-  var mergedIDs = arrayMerge(diff1IDs, diff2IDs)
+  var mergedIDs = arrayMerge([diff1IDs, diff2IDs])
   var mergedValues = {}
   var valueConflicts = []
   _.each(diff1.values, function(diff1Entry, id) {
